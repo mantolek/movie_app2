@@ -5,8 +5,8 @@ Download the repo and type npm install in main folder, client and server. Then n
 
 ### Description
 Presentation project nr 2 
--Front: React + TS and class components
--Back: Node, mySQL, Express
+- Front: React + TS and class components
+- Back: Node, mySQL, Express
 
 ### What should be changed
 
@@ -15,6 +15,6 @@ Presentation project nr 2
 
 ### Also check
 Presentation project nr 1 created using:
--Front: React + TS and function components
--Back: Node, MongoDB, Express.
--https://github.com/mantolek/movie_app
+- Front: React + TS and function components
+- Back: Node, MongoDB, Express.
+- https://github.com/mantolek/movie_app
