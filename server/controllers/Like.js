@@ -4,89 +4,82 @@ const db = require('../db/index');
  * Get likes
  * POST
  */
-// exports.getLikes = async (req, res) => {
-//   let variable = {};
-//   // Check if movie or comment
-//   if (req.body.movieID) {
-//     variable = { movieID: req.body.movieID };
-//   } else {
-//     variable = { commentID: req.body.commentID };
-//   }
+exports.getLikes = async (req, res) => {
+  let movieID = req.body.movieID | '';
+  let commentID = req.body.commentID | '';
 
-//   try {
-//     const likes = await Like.find(variable);
-//     if (!likes)
-//       return res
-//         .status(400)
-//         .json({ msg: 'Something went wrong with getting like' });
-
-//     return res.status(200).json({ success: true, likes });
-//   } catch (err) {
-//     return res.status(400).json({ msg: err.message });
-//   }
-// };
+  try {
+    db.query(
+      `SELECT * FROM likes
+       WHERE (movieID = '${movieID}') OR (commentID = '${commentID}')
+       `,
+      function (error, results) {
+        if (error) return res.status(400).json({ msg: 'Ups' });
+        if (results)
+        console.log(results , 'results')
+          return res.status(200).json({
+            results: results
+          });
+      }
+    );
+  } catch (err) {
+    return res.status(400).json({ msg: err.message });
+  }
+};
 
 /**
  * Get dislikes
  * POST
  */
-// exports.getDislikes = async (req, res) => {
-//   let variable = {};
-//   // Check if movie or comment
-//   if (req.body.movieID) {
-//     variable = { movieID: req.body.movieID };
-//   } else {
-//     variable = { commentID: req.body.commentID };
-//   }
-//   try {
-//     const dislikes = await Dislike.find(variable);
-//     if (!dislikes)
-//       return res
-//         .status(400)
-//         .json({ msg: 'Something went wrong with getting dislikes' });
-//     return res.status(200).json({ success: true, dislikes });
-//   } catch (err) {
-//     return res.status(400).json({ msg: err.message });
-//   }
-// };
+exports.getDislikes = async (req, res) => {
+  let movieID = req.body.movieID | '';
+  let commentID = req.body.commentID | '';
+
+  try {
+    db.query(
+      `SELECT * FROM dislikes
+       WHERE (movieID = '${movieID}') OR (commentID = '${commentID}')
+       `,
+      function (error, results) {
+        if (error) return res.status(400).json({ msg: 'Ups' });
+        if (results)
+        console.log(results , 'results')
+          return res.status(200).json({
+            results: results
+          });
+      }
+    );
+  } catch (err) {
+    return res.status(400).json({ msg: err.message });
+  }
+};
 
 /**
  * Add like
  * POST
  */
 exports.upLike = async (req, res) => {
-  let variable = {};
-  if (req.body.movieID) {
-    variable = { movieID: req.body.movieID, userID: req.user._id };
-  } else {
-    variable = { commentID: req.body.commentID, userID: req.user._id };
-  }
+  let userID = req.user.id;
+  let movieID = req.body.movieID | '';
+  let commentID = req.body.commentID | '';
+
+  // check if liked and dont like again ??
 
   try {
-    const like = await new Like(variable);
-    if (!like)
-      return res.status(400).json({ msg: 'Something went wrong with like.' });
+    db.query(
+      `INSERT INTO likes (userID, commentID, movieID) VALUES ('${userID}', '${commentID}', '${movieID}')`,
+      function (error) {
+        if (error) return res.status(400).json({ msg: 'Ups' });
 
-    const newLike = await like.save();
-    if (!newLike)
-      return res
-        .status(400)
-        .json({ msg: 'Something went wrong with saving new like.' });
-
-    // If previously disliked. Undislike.
-    const disLikeExist = await Dislike.find(variable);
-    if (disLikeExist.length > 0) {
-      const disLike = await Dislike.findOneAndDelete(variable);
-      if (!disLike)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            msg: 'Something went wrong with undisliking.',
-          });
-    }   
-
-    return res.status(200).json({ success: true });
+        db.query(
+          `DELETE FROM dislikes WHERE (movieID='${movieID}' AND userID='${userID}') OR (commentID='${commentID}' AND userID='${userID}')`,
+          function (error) {
+            if (error) return res.status(400).json({ msg: 'Ups' });
+            return res.status(200).json({ success: true });
+          }
+        );
+      }
+    );
   } catch (err) {
     return res.status(400).json({ msg: err.message });
   }
@@ -96,90 +89,75 @@ exports.upLike = async (req, res) => {
  * Delete like
  * POST
  */
-// exports.unLike = async (req, res) => {
-//   let variable = {};
-//   if (req.body.movieID) {
-//     variable = { movieID: req.body.movieID, userID: req.user._id };
-//   } else {
-//     variable = { commentID: req.body.commentID, userID: req.user._id };
-//   }
+exports.unLike = async (req, res) => {
+  let userID = req.user.id;
+  let movieID = req.body.movieID | '';
+  let commentID = req.body.commentID | '';
 
-//   try {
-//     // If liked. Unlike
-//     const like = await Like.findOneAndDelete(variable);
-//     if (!like)
-//       return res.status(400).json({
-//         success: false,
-//         msg: 'Something went wrong with unlikind.',
-//       });
-
-//     return res.status(200).json({ success: true });
-//   } catch (err) {
-//     return res.status(400).json({ msg: err.message });
-//   }
-// };
+  try {
+    // If liked. Unlike
+    db.query(
+      `DELETE FROM likes WHERE (movieID='${movieID}' AND userID='${userID}') OR (commentID='${commentID}' AND userID='${userID}')`,
+      function (error) {
+        if (error) return res.status(400).json({ msg: 'Ups' });
+        return res.status(200).json({ success: true });
+      }
+    );
+  } catch (err) {
+    return res.status(400).json({ msg: err.message });
+  }
+};
 
 /**
  * Add dislike
  * POST
  */
-// exports.upDisLike = async (req, res) => {
-//   let variable = {};
-//   if (req.body.movieID) {
-//     variable = { movieID: req.body.movieID, userID: req.user._id };
-//   } else {
-//     variable = { commentID: req.body.commentID, userID: req.user._id };
-//   }
+exports.upDisLike = async (req, res) => {
+  let userID = req.user.id;
+  let movieID = req.body.movieID | '';
+  let commentID = req.body.commentID | '';
 
-//   try {
-//     // If liked. Unlike
-//     const likeExist = await Like.find(variable);
-//     if (likeExist.length > 0) {
-//       const like = await Like.findOneAndDelete(variable);
-//       if (!like) return res.status(400).json({ success: false, msg: 'error' });
-//     }
+  // check if dizliked and dont dizlike again ??
 
-//     const disLike = await new Dislike(variable);
-//     if (!disLike)
-//       return res.json({
-//         success: false,
-//         msg: 'Something went wrong with disLike.',
-//       });
+  try {
+    db.query(
+      `INSERT INTO dislikes (userID, commentID, movieID) VALUES ('${userID}', '${commentID}', '${movieID}')`,
+      function (error) {
+        if (error) return res.status(400).json({ msg: 'Ups' });
 
-//     const newDisLike = await disLike.save();
-//     if (!newDisLike)
-//       return res
-//         .status(400)
-//         .json({ msg: 'Something went wrong with saving disLike.' });
-
-//     return res.status(200).json({ success: true });
-//   } catch (err) {
-//     return res.status(400).json({ msg: err.message });
-//   }
-// };
+        db.query(
+          `DELETE FROM likes WHERE (movieID='${movieID}' AND userID='${userID}') OR (commentID='${commentID}' AND userID='${userID}')`,
+          function (error) {
+            if (error) return res.status(400).json({ msg: 'Ups' });
+            return res.status(200).json({ success: true });
+          }
+        );
+      }
+    );
+  } catch (err) {
+    return res.status(400).json({ msg: err.message });
+  }
+};
 
 /**
  * Delete dislike
  * POST
  */
-// exports.unDisLike = async (req, res) => {
-//   let variable = {};
-//   if (req.body.movieID) {
-//     variable = { movieID: req.body.movieID, userID: req.user._id };
-//   } else {
-//     variable = { commentID: req.body.commentID, userID: req.user._id };
-//   }
+exports.unDisLike = async (req, res) => {
+  let userID = req.user.id;
+  let movieID = req.body.movieID | '';
+  let commentID = req.body.commentID | '';
 
-//   try {
-//     const disLike = await Dislike.findOneAndDelete(variable);
-//     if (!disLike)
-//       return res.status(400).json({
-//         success: false,
-//         msg: 'Something went wrong with saving new user.',
-//       });
-
-//     return res.status(200).json({ success: true });
-//   } catch (err) {
-//     return res.status(400).json({ msg: err.message });
-//   }
-// };
+  try {
+    // If disliked. Undislike
+    db.query(
+      `DELETE FROM likes WHERE (movieID='${movieID}' AND userID='${userID}') OR (commentID='${commentID}' AND userID='${userID}')`,
+      function (error) {
+        if (error) return res.status(400).json({ msg: 'Ups' });
+        return res.status(200).json({ success: true });
+      }
+    );
+  } catch (err) {
+    return res.status(400).json({ msg: err.message });
+  }
+};

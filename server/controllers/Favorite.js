@@ -91,7 +91,7 @@ exports.getFavoredMovie = async (req, res) => {
         if (error) return res.status(400).json({ msg: 'Ups' });
         if (results)
           return res.status(200).json({
-            results: results[0],
+            results: results,
           });
       }
     );

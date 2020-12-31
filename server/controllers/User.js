@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken');
 const db = require('../db/index');
 
 /**
@@ -21,11 +22,11 @@ exports.auth = (req, res) => {
  * POST
  */
 exports.register = async (req, res) => {
-  const { name, lastname, email, password, token } = req.body;
+  const { name, lastname, email, password } = req.body;
 
   try {
     db.query(
-      `INSERT INTO users (name, lastname, email, password, token) VALUES ('${name}', '${lastname}', '${email}', '${password}', '${token}')`,
+      `INSERT INTO users (name, lastname, email, password) VALUES ('${name}', '${lastname}', '${email}', '${password}')`,
       function (error, results) {
         if (error) return res.status(400).json({ msg: 'Ups' });
         if (results) return res.status(200).json({ success: true });
@@ -44,26 +45,34 @@ exports.login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // hash
-
-    // token
-    await db.query(
-      `UPDATE users SET token='1234' WHERE email='${email}' AND password='${password}';`,
-      function (error) {
-        if (error) return res.status(400).json({ msg: 'Ups' });
-      }
-    );
-
-    await db.query(
-      `SELECT u.name, u.id, u.token FROM users AS u WHERE '${email}' = u.email AND '${password}' = u.password`,
+    db.query(
+      `SELECT id FROM users WHERE '${email}' = email AND '${password}' = password`,
       function (error, results) {
         if (error) return res.status(400).json({ msg: 'Ups' });
-        if (results)
-          return res.status(200).json({
-            loginSuccess: true,
-            token: results.token,
-            id: results._id,
-          });
+        if (results) {
+          let id = results[0].id;
+          let token = jwt.sign(id, 'secret')
+
+          db.query(
+            `UPDATE users SET token='${token}' WHERE email='${email}' AND password='${password}';`,
+            function (error) {
+              if (error) return res.status(400).json({ msg: 'Ups' });
+            }
+          );
+
+          db.query(
+            `SELECT name, id, token FROM users WHERE '${email}' = email AND '${password}' = password`,
+            function (error, results) {
+              if (error) return res.status(400).json({ msg: 'Ups' });
+              if (results)
+                return res.status(200).json({
+                  loginSuccess: true,
+                  token: results[0].token,
+                  id: results[0]._id,
+                });
+            }
+          );
+        }
       }
     );
   } catch (err) {
